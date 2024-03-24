@@ -185,7 +185,7 @@ Authorization: Bearer <token>
 ```json
 {
     "amount": 1500.00,
-    "transaction_date": "2023-12-31T14:48:00.000Z", //ISO string
+    "transaction_date": "2023-12-31T14:48:00.000Z",
     "type": "CREDIT",
     "party_name": "Aditya Gupta",
     "description": "ice cream contribution",
