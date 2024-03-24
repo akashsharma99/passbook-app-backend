@@ -1,10 +1,10 @@
 ## Entities
 
 ### User
-- user_id
+- user_id ( string primary key)
 - username
 - email
-- password
+- password_hash ( store hashed password including salt )
 - created_at
 - updated_at
 
@@ -12,8 +12,9 @@
 - passbook_id
 - user_id (foreign key to users table)
 - bank_name
-- account_number
+- account_number ( bank_name + account_number should be unique )
 - total_balance
+- nickname
 
 ### Transaction
 - transaction_id
@@ -47,5 +48,5 @@
 - User can view all transactions for a passbook.
 - User can filter transactions by
     - party name
-    - description
     - tags
+    - type
