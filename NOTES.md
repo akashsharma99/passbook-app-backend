@@ -5,8 +5,9 @@
 - username
 - email
 - password_hash ( store hashed password including salt )
-- created_at
-- updated_at
+- created_at timestampz
+- updated_at timestampz
+
 
 ### Passbook
 - passbook_id
@@ -20,7 +21,7 @@
 - transaction_id
 - amount
 - transaction_date
-- type (CREDIT/DEBIT)
+- transaction_type (CREDIT/DEBIT)
 - party_name
 - description
 - created_at
@@ -42,11 +43,11 @@
 - user can delete a passbook which also deletes all transactions for that passbook.
 
 ### Transactions
-- User can add transactions to a passbook with amount, transaction date, type, party name, description and tags.
+- User can add transactions to a passbook with amount, transaction_date, transaction_type, party name, description and tags.
 - User can edit a transaction.
 - User can delete a transaction.
 - User can view all transactions for a passbook.
 - User can filter transactions by
     - party name
     - tags
-    - type
+    - transaction_type
