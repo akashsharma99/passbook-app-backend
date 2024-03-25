@@ -1,4 +1,5 @@
 *.env
+!example.env
 
 # Binaries for programs and plugins
 *.exe
@@ -7,6 +8,7 @@
 *.so
 *.dylib
 
+bin/
 target/
 # Test binary, built with `go test -c`
 *.test
