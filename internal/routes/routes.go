@@ -15,22 +15,30 @@ func NewRouter() *gin.Engine {
 			})
 		})
 		// users routes
-		v1.POST("/users", CreateUser)
-		v1.POST("/users/login", LoginUser)
-		v1.GET("/users/me", GetUser)
-		v1.PATCH("/users/me", ResetPassword)
-		// passbooks routes
-		v1.POST("/passbooks", CreatePassbook)                // creates a new passbook
-		v1.GET("/passbooks", GetPassbooks)                   // gets all passbooks for a user
-		v1.GET("/passbooks/:passbook_id", GetPassbook)       // gets a passbook by id
-		v1.PATCH("/passbooks/:passbook_id", UpdatePassbook)  // updates a passbook by id
-		v1.DELETE("/passbooks/:passbook_id", DeletePassbook) // deletes a passbook by id
-		// transactions routes
-		v1.GET("/passbooks/:passbook_id/transactions", GetTransactions)                      // get all transactions for a passbook
-		v1.POST("/passbooks/:passbook_id/transactions", CreateTransaction)                   // create a new transaction for a passbook
-		v1.GET("/passbooks/:passbook_id/transactions/:transaction_id", GetTransaction)       // get a transaction by id
-		v1.PATCH("/passbooks/:passbook_id/transactions/:transaction_id", UpdateTransaction)  // update a transaction by id
-		v1.DELETE("/passbooks/:passbook_id/transactions/:transaction_id", DeleteTransaction) // delete a transaction by id
+		users := v1.Group("/users")
+		{
+			users.POST("", CreateUser)
+			users.POST("/login", LoginUser)
+			users.GET("/me", GetUser)
+			users.PATCH("/me", ResetPassword)
+		}
+		passbooks := v1.Group("/passbooks")
+		{
+			passbooks.POST("", CreatePassbook)                // creates a new passbook
+			passbooks.GET("", GetPassbooks)                   // gets all passbooks for a user
+			passbooks.GET("/:passbook_id", GetPassbook)       // gets a passbook by id
+			passbooks.PATCH("/:passbook_id", UpdatePassbook)  // updates a passbook by id
+			passbooks.DELETE("/:passbook_id", DeletePassbook) // deletes a passbook by id
+
+			transactions := passbooks.Group("/:passbook_id/transactions")
+			{
+				transactions.GET("", GetTransactions)                      // gets all transactions for a passbook
+				transactions.POST("", CreateTransaction)                   // creates a new transaction for a passbook
+				transactions.GET("/:transaction_id", GetTransaction)       // gets a transaction by id
+				transactions.PATCH("/:transaction_id", UpdateTransaction)  // updates a transaction by id
+				transactions.DELETE("/:transaction_id", DeleteTransaction) // deletes a transaction by id
+			}
+		}
 	}
 
 	return router
