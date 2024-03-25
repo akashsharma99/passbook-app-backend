@@ -136,7 +136,7 @@ Authorization: Bearer <token>
 ```
 #### `GET /passbooks/:passbook_id` 🔒 - Get Passbook
 #### `DELETE /passbooks/:passbook_id` 🔒 - Delete Passbook
-
+#### `PATCH /passbooks/:passbook_id` 🔒 - Update Passbook
 #### `GET /passbooks/:passbook_id/transactions` 🔒 - Get All Transactions paginated
 - Query params
     - page: 1
