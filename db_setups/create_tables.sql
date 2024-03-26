@@ -1,9 +1,9 @@
 -- create users table
 create table
   passbook_app.users (
-    user_id uuid primary key,
-    username VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
+    user_id uuid primary key DEFAULT gen_random_uuid(),
+    username VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
     password_hash text NOT NULL,
     created_at timestamp with time zone not null,
     updated_at timestamp with time zone not null
@@ -11,7 +11,7 @@ create table
 -- create passbooks table
 create table
   passbook_app.passbooks (
-    passbook_id uuid primary key,
+    passbook_id uuid primary key DEFAULT gen_random_uuid(),
     user_id uuid references passbook_app.users(user_id) not null,
     bank_name VARCHAR(255) NOT NULL,
     account_number VARCHAR(255) NOT NULL,
@@ -22,7 +22,7 @@ create table
 -- create transactions table
 create table
   passbook_app.transactions (
-    transaction_id UUID primary key,
+    transaction_id UUID primary key DEFAULT gen_random_uuid(),
     amount DECIMAL(10,2) NOT NULL,
     transaction_date timestamp with time zone not null,
     transaction_type VARCHAR(50) NOT NULL,
