@@ -27,30 +27,30 @@ type User struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
+func setErrorResponse(ctx *gin.Context, erroCode int, message string) {
+	ctx.JSON(erroCode, gin.H{
+		"status":  "error",
+		"message": message,
+	})
+}
+
 // route handler for creating a new user
 func CreateUser(ctx *gin.Context) {
 
 	var user UserReq
 	err := ctx.BindJSON(&user)
 	if err != nil {
-		ctx.JSON(400, gin.H{
-			"status":  "error",
-			"message": "Invalid request",
-		})
+		setErrorResponse(ctx, 400, "Invalid request")
+		return
 	}
 	// encrypt the password before saving it in DB using bcrypt
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrPasswordTooLong) {
-			ctx.JSON(400, gin.H{
-				"status":  "error",
-				"message": "Password too long. Please provide a password with less than 72 characters",
-			})
+			setErrorResponse(ctx, 400, "Password too long. Please provide a password with less than 72 characters")
+			return
 		}
-		ctx.JSON(500, gin.H{
-			"status":  "error",
-			"message": "Failed to create User. Try again later!",
-		})
+		setErrorResponse(ctx, 500, "Failed to create User. Try again later!")
 		return
 	}
 	user.Password = string(hashedPassword)
@@ -64,28 +64,22 @@ func CreateUser(ctx *gin.Context) {
 	if err != nil {
 		log.Println(err)
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-			ctx.JSON(400, gin.H{
-				"status":  "error",
-				"message": "Username or Email already exists. Please provide a unique username and email.",
-			})
+			setErrorResponse(ctx, 400, "Username or Email already exists. Please provide a unique username and email.")
 			return
 		}
-		ctx.JSON(500, gin.H{
-			"status":  "error",
-			"message": "Failed to create User. Try again later!",
-		})
+		setErrorResponse(ctx, 500, "Failed to create User. Try again later!")
 		return
 	}
 	// get the generated userid
-	var id string
-	initializers.DB.QueryRow(context.Background(), "SELECT user_id FROM passbook_app.users WHERE username=$1", user.Username).Scan(&id)
+	var user_id string
+	initializers.DB.QueryRow(context.Background(), "SELECT user_id FROM passbook_app.users WHERE username=$1", user.Username).Scan(&user_id)
 	ctx.JSON(201, gin.H{
 		"status":  "success",
 		"message": "User created successfully",
 		"data": map[string]interface{}{
 			"username": user.Username,
 			"email":    user.Email,
-			"user_id":  id,
+			"user_id":  user_id,
 		},
 		"meta": nil,
 	})
@@ -96,28 +90,20 @@ func LoginUser(ctx *gin.Context) {
 	var userReq UserReq
 	err := ctx.BindJSON(&userReq)
 	if err != nil {
-		ctx.JSON(400, gin.H{
-			"status":  "error",
-			"message": "Invalid request",
-		})
+		setErrorResponse(ctx, 400, "Invalid request")
+		return
 	}
 	rows, _ := initializers.DB.Query(context.Background(), "SELECT * FROM passbook_app.users WHERE username=$1", userReq.Username)
 	// scan row into user struct
 	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[User])
 	if err != nil {
-		ctx.JSON(401, gin.H{
-			"status":  "error",
-			"message": "Invalid username or password",
-		})
+		setErrorResponse(ctx, 401, "Invalid username or password")
 		log.Println(err)
 		return
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(userReq.Password))
 	if err != nil {
-		ctx.JSON(401, gin.H{
-			"status":  "error",
-			"message": "Invalid username or password",
-		})
+		setErrorResponse(ctx, 401, "Invalid username or password")
 		return
 	}
 	ctx.JSON(200, gin.H{
