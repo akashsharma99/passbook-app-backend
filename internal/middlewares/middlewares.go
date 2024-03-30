@@ -55,11 +55,7 @@ func ValidateToken(jwtToken string) (*UserTokenClaims, error) {
 		return []byte(os.Getenv("ACCESS_SECRET")), nil
 	}, jwt.WithExpirationRequired(), jwt.WithIssuedAt())
 	if err != nil {
-		if err == jwt.ErrTokenExpired {
-			log.Println("Token expired")
-		} else {
-			log.Println(err)
-		}
+		log.Println(err)
 		return nil, err
 	}
 	if !token.Valid {
