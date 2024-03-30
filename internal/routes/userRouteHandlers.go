@@ -49,6 +49,11 @@ func CreateUser(ctx *gin.Context) {
 		setErrorResponse(ctx, 400, "Invalid request")
 		return
 	}
+	// if any of the mandatory fields are empty, return an error
+	if user.Username == "" || user.Email == "" || user.Password == "" {
+		setErrorResponse(ctx, 400, "Please provide all the mandatory fields.")
+		return
+	}
 	// encrypt the password before saving it in DB using bcrypt
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -83,8 +88,10 @@ func CreateUser(ctx *gin.Context) {
 		"status":  "success",
 		"message": "User created successfully",
 		"data": map[string]interface{}{
-			"username": user.Username,
-			"email":    user.Email,
+			"user": map[string]string{
+				"username": user.Username,
+				"email":    user.Email,
+			},
 		},
 		"meta": nil,
 	})
@@ -132,12 +139,13 @@ func LoginUser(ctx *gin.Context) {
 	})
 }
 func generateTokens(user User) (string, string, error) {
+	time_now := time.Now()
 	// generate signed access token
 	accessClaims := userTokenClaims{
 		UserID: user.UserID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 15)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time_now.Add(time.Minute * 15)),
+			IssuedAt:  jwt.NewNumericDate(time_now),
 		},
 	}
 	access_token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims).SignedString([]byte(os.Getenv("ACCESS_SECRET")))
@@ -149,13 +157,20 @@ func generateTokens(user User) (string, string, error) {
 	refreshClaims := userTokenClaims{
 		UserID: user.UserID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time_now.Add(time.Hour * 24)),
+			IssuedAt:  jwt.NewNumericDate(time_now),
 		},
 	}
 	refresh_token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(os.Getenv("REFRESH_SECRET")))
 	if err != nil {
 		log.Println("Failed to generate refresh token for user ", user.Username)
+		return "", "", err
+	}
+	// upsert refresh token in DB
+	_, err = initializers.DB.Exec(context.Background(), "INSERT INTO passbook_app.tokens (user_id, rtoken, created_at, updated_at) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET rtoken=$2, updated_at=$4",
+		user.UserID, refresh_token, time_now.UTC(), time_now.UTC())
+	if err != nil {
+		log.Println("Failed to save refresh token for user ", user.Username)
 		return "", "", err
 	}
 	return access_token, refresh_token, nil
