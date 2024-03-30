@@ -14,14 +14,21 @@ func NewRouter() *gin.Engine {
 				"message": "OK",
 			})
 		})
-		// users routes
-		users := v1.Group("/users")
+		//auth routes
+		auth := v1.Group("/auth")
 		{
-			users.POST("", CreateUser)
-			users.POST("/login", LoginUser)
-			// users.GET("/me", GetUser)
-			// users.PATCH("/me", ResetPassword)
+			auth.POST("/login", LoginUser)
+			auth.POST("/register", CreateUser)
+			//auth.GET("/refresh", RefreshToken)
 		}
+		// users routes
+		/*
+			users := v1.Group("/users")
+			{
+				// users.GET("/me", GetUser)
+				// users.PATCH("/me", UpdateUser)
+			}
+		*/
 		/*
 			passbooks := v1.Group("/passbooks")
 			{
