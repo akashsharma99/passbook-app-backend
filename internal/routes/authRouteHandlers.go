@@ -21,7 +21,7 @@ type UserReq struct {
 	Password string `json:"password"`
 }
 
-type userTokenClaims struct {
+type UserTokenClaims struct {
 	UserID string `json:"userId"`
 	jwt.RegisteredClaims
 }
@@ -134,7 +134,7 @@ func LoginUser(ctx *gin.Context) {
 func generateTokens(user User) (string, string, error) {
 	time_now := time.Now()
 	// generate signed access token
-	accessClaims := userTokenClaims{
+	accessClaims := UserTokenClaims{
 		UserID: user.UserID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time_now.Add(time.Minute * 15)),
@@ -147,7 +147,7 @@ func generateTokens(user User) (string, string, error) {
 		return "", "", err
 	}
 	// generate signed refresh token
-	refreshClaims := userTokenClaims{
+	refreshClaims := UserTokenClaims{
 		UserID: user.UserID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time_now.Add(time.Hour * 24)),
@@ -159,12 +159,25 @@ func generateTokens(user User) (string, string, error) {
 		log.Println("Failed to generate refresh token for user ", user.Username)
 		return "", "", err
 	}
-	// upsert refresh token in DB
-	_, err = initializers.DB.Exec(context.Background(), "INSERT INTO passbook_app.tokens (user_id, rtoken, created_at, updated_at) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET rtoken=$2, updated_at=$4",
-		user.UserID, refresh_token, time_now.UTC(), time_now.UTC())
-	if err != nil {
+	// if token for user_id exists update it else insert token
+	var exists bool
+	dberr := initializers.DB.QueryRow(context.Background(), "SELECT true FROM passbook_app.tokens WHERE user_id=$1", user.UserID).Scan(&exists)
+	if dberr != nil && dberr != pgx.ErrNoRows {
+		log.Println(dberr)
+		log.Println("Failed to check if token exists for user ", user.Username)
+		return "", "", dberr
+	}
+	if exists {
+		_, dberr = initializers.DB.Exec(context.Background(), "UPDATE passbook_app.tokens SET rtoken=$1, updated_at=$2 WHERE user_id=$3",
+			refresh_token, time_now.UTC(), user.UserID)
+	} else {
+		_, dberr = initializers.DB.Exec(context.Background(), "INSERT INTO passbook_app.tokens (user_id, rtoken, created_at, updated_at) VALUES ($1, $2, $3, $4)",
+			user.UserID, refresh_token, time_now.UTC(), time_now.UTC())
+	}
+
+	if dberr != nil {
 		log.Println("Failed to save refresh token for user ", user.Username)
-		return "", "", err
+		return "", "", dberr
 	}
 	return access_token, refresh_token, nil
 }
