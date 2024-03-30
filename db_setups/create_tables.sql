@@ -34,3 +34,12 @@ create table
     passbook_id uuid references passbook_app.passbooks(passbook_id) not null,
     user_id uuid references passbook_app.users(user_id) not null
   );
+  -- create refresh_tokens table
+create table
+  passbook_app.tokens (
+    id SERIAL primary key,
+    user_id uuid NOT NULL,
+    rtoken TEXT NOT NULL,
+    created_at timestamp with time zone not null,
+    updated_at timestamp with time zone not null
+  );
