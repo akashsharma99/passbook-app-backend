@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"log"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/akashsharma99/passbook-app/internal/initializers"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -25,6 +27,10 @@ type User struct {
 	PasswordHash string    `json:"password_hash"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+}
+type userTokenClaims struct {
+	UserID string `json:"userId"`
+	jwt.RegisteredClaims
 }
 
 func setErrorResponse(ctx *gin.Context, erroCode int, message string) {
@@ -79,7 +85,6 @@ func CreateUser(ctx *gin.Context) {
 		"data": map[string]interface{}{
 			"username": user.Username,
 			"email":    user.Email,
-			"user_id":  user_id,
 		},
 		"meta": nil,
 	})
@@ -106,13 +111,52 @@ func LoginUser(ctx *gin.Context) {
 		setErrorResponse(ctx, 401, "Invalid username or password")
 		return
 	}
+	// generate access and refresh tokens
+	access_token, refresh_token, err := generateTokens(user)
+	if err != nil {
+		setErrorResponse(ctx, 500, "Login failed. Try again later!")
+		return
+	}
+	// return access token in response body while refresh token in httponly cookie
+	ctx.SetCookie("refresh_token", refresh_token, 3600*24, "/", "", true, true)
 	ctx.JSON(200, gin.H{
 		"status":  "success",
 		"message": "User logged in successfully",
 		"data": map[string]interface{}{
-			"username": user.Username,
-			"email":    user.Email,
-			"user_id":  user.UserID,
+			"access_token": access_token,
+			"user": map[string]string{
+				"username": user.Username,
+				"email":    user.Email,
+			},
 		},
 	})
+}
+func generateTokens(user User) (string, string, error) {
+	// generate signed access token
+	accessClaims := userTokenClaims{
+		UserID: user.UserID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 15)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+	access_token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims).SignedString([]byte(os.Getenv("ACCESS_SECRET")))
+	if err != nil {
+		log.Println("Failed to generate access token for user ", user.Username)
+		return "", "", err
+	}
+	// generate signed refresh token
+	refreshClaims := userTokenClaims{
+		UserID: user.UserID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+	refresh_token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(os.Getenv("REFRESH_SECRET")))
+	if err != nil {
+		log.Println("Failed to generate refresh token for user ", user.Username)
+		return "", "", err
+	}
+	return access_token, refresh_token, nil
 }
