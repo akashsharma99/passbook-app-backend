@@ -6,7 +6,7 @@ Plan to create api using golang for the passbook app [frontend](https://github.c
 
 click [here](NOTES.md) for entity and functional requirement list.
 
-base URL: `http://api.passbook.app/v1/`
+base URL: `http://api.domain.app/v1/`
 
 ## Authentication
 
@@ -21,7 +21,6 @@ Authorization: Bearer <token>
 ```json
 {
     "status": "success",
-    "code": 200,
     "message": "success message",
     "data": {},
     "meta": {
@@ -37,15 +36,15 @@ Authorization: Bearer <token>
 ```json
 {
     "status": "error",
-    "code": 400,
     "message": "error message",
-    "data": null,
+    "data": {},
     "meta": {}
 }
 ```
 ## Endpoints
 
-#### `POST /users` - Register User
+
+#### `POST /auth/register` - Register User
 
 **Request**
 
@@ -58,41 +57,63 @@ Authorization: Bearer <token>
 ```
 **Responses**
 - 201: User created successfully
+```json
+{
+    "status": "success",
+    "message": "User created successfully",
+    "data": {
+        "username": "john_doe",
+        "email": "john_doe@email.com"
+    }
+}
+```
 - 400: Validation error
 - 409: User already exists
+- 500: Internal failures
 
-#### `POST /users/login` - Login User
+#### `POST /auth/login` - Login User
 
 **Request**
 
 ```json
 {
-    "email": "john.doe@email.com",
+    "username": "john.doe",
     "password": "password"
 }
 ```
 **Responses**
+- 401: Unauthorized
 - 200: User logged in successfully
 ```json
 {
     "status": "success",
-    "code": 200,
     "message": "User logged in successfully",
     "data":{
         "access_token": "jwt_token",
-        "refresh_token": "refresh_token",
         "user": {
-            "user_id": "sdvgsrgregf345f34rt34t5",
             "username": "john_doe",
             "email": "john.doe@email.com"
         }
-    },
-    "meta": {}
+    }
 }
 ```
-- 401: Unauthorized
+> Use `access_token` in Authorization header for further requests. The `refresh_token` is part of a secure httpOnly cookie sent by the server. Both tokens are jwt tokens. The `access_token` is short-lived (15 minutes) and the `refresh_token` is long-lived (24 hours).
+
+**jwt token payload**
+```json
+{
+  "userId": "a7437e4e-a898-4c17-b96e-acf32754ae6e", // uuid
+  "exp": 1711901181,// expiry time
+  "iat": 1711814781 // issued at
+}
+```
+> All 🔒 endpoints require a Authorization header
+
 #### `GET /users/me` 🔒 - Get User Profile
-#### `PATCH /users/me` 🔒 - Reset password
+```bash
+curl -X GET http://api.domain.app/v1/users/me -H "Authorization : Bearer <token>"
+```
+
 
 #### `POST /passbooks` 🔒 - Create Passbook
 

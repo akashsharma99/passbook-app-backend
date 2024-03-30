@@ -35,7 +35,7 @@
 
 ### Users
 - User can register with username, email and password.
-- User can login with email and password.
+- User can login with username and password.
 
 ### Passbooks
 - User can create multiple passbooks with bank name, account number and zero balance.
