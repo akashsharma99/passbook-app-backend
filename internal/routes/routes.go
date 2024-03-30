@@ -1,6 +1,9 @@
 package routes
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/akashsharma99/passbook-app/internal/middlewares"
+	"github.com/gin-gonic/gin"
+)
 
 // create a router using gin and return it
 func NewRouter() *gin.Engine {
@@ -25,7 +28,7 @@ func NewRouter() *gin.Engine {
 
 		users := v1.Group("/users")
 		{
-			users.GET("/me", GetUser)
+			users.GET("/me", middlewares.AuthUser(), GetUser)
 			// users.PATCH("/me", UpdateUser)
 		}
 
