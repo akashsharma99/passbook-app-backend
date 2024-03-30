@@ -22,7 +22,7 @@ func NewRouter() *gin.Engine {
 		{
 			auth.POST("/login", LoginUser)
 			auth.POST("/register", CreateUser)
-			//auth.GET("/refresh", RefreshToken)
+			auth.GET("/refresh", RefreshToken)
 		}
 		// users routes
 

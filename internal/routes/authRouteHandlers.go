@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/akashsharma99/passbook-app/internal/initializers"
+	"github.com/akashsharma99/passbook-app/internal/middlewares"
+	"github.com/akashsharma99/passbook-app/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
@@ -19,11 +21,6 @@ type UserReq struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-}
-
-type UserTokenClaims struct {
-	UserID string `json:"userId"`
-	jwt.RegisteredClaims
 }
 
 func setErrorResponse(ctx *gin.Context, erroCode int, message string) {
@@ -100,7 +97,7 @@ func LoginUser(ctx *gin.Context) {
 	}
 	rows, _ := initializers.DB.Query(context.Background(), "SELECT * FROM passbook_app.users WHERE username=$1", userReq.Username)
 	// scan row into user struct
-	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[User])
+	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.User])
 	if err != nil {
 		setErrorResponse(ctx, 401, "Invalid username or password")
 		log.Println(err)
@@ -131,10 +128,10 @@ func LoginUser(ctx *gin.Context) {
 		},
 	})
 }
-func generateTokens(user User) (string, string, error) {
+func generateTokens(user types.User) (string, string, error) {
 	time_now := time.Now()
 	// generate signed access token
-	accessClaims := UserTokenClaims{
+	accessClaims := types.UserTokenClaims{
 		UserID: user.UserID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time_now.Add(time.Minute * 15)),
@@ -147,7 +144,7 @@ func generateTokens(user User) (string, string, error) {
 		return "", "", err
 	}
 	// generate signed refresh token
-	refreshClaims := UserTokenClaims{
+	refreshClaims := types.UserTokenClaims{
 		UserID: user.UserID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time_now.Add(time.Hour * 24)),
@@ -180,4 +177,61 @@ func generateTokens(user User) (string, string, error) {
 		return "", "", dberr
 	}
 	return access_token, refresh_token, nil
+}
+func RefreshToken(ctx *gin.Context) {
+	refresh_token, err := ctx.Cookie("refresh_token")
+	if err != nil {
+		log.Println("Failed to get refresh token from cookie")
+		setErrorResponse(ctx, 400, "Invalid request")
+		return
+	}
+	claims, err := middlewares.ValidateToken(refresh_token, os.Getenv("REFRESH_SECRET"))
+	if err != nil {
+		setErrorResponse(ctx, 401, "Invalid Refresh token")
+		return
+	}
+	// check if user exists and token is not revoked
+	user_id := claims.UserID
+	if !isValidUser(user_id) || isRevokedToken(refresh_token, user_id) {
+		setErrorResponse(ctx, 401, "Invalid Refresh token")
+		return
+	}
+	// generate new access and refresh tokens
+	access_token, refresh_token, err := generateTokens(types.User{UserID: user_id})
+	if err != nil {
+		setErrorResponse(ctx, 500, "Failed to refresh token. Try again later!")
+		return
+	}
+	// return access token in response body while refresh token in httponly cookie
+	ctx.SetCookie("refresh_token", refresh_token, 3600*24, "/", "", true, true)
+	ctx.JSON(200, gin.H{
+		"status":  "success",
+		"message": "Token refreshed successfully",
+		"data": map[string]string{
+			"access_token": access_token,
+		},
+	})
+}
+func isValidUser(user_id string) bool {
+	var exists bool
+	dberr := initializers.DB.QueryRow(context.Background(), "SELECT true FROM passbook_app.users WHERE user_id=$1", user_id).Scan(&exists)
+	if dberr != nil && dberr != pgx.ErrNoRows {
+		log.Println(dberr)
+		log.Println("Failed to check if user exists for id ", user_id)
+		return false
+	}
+	return exists
+}
+func isRevokedToken(refresh_token string, user_id string) bool {
+	// if token not present in token table then it is a revoked token and should not be allowed to refresh
+	var exists bool
+	dberr := initializers.DB.QueryRow(context.Background(), "SELECT true FROM passbook_app.tokens WHERE user_id=$1 AND rtoken=$2", user_id, refresh_token).Scan(&exists)
+	if dberr == pgx.ErrNoRows {
+		log.Println("The incoming refresh token is a revoked token")
+		return true
+	} else if dberr != nil {
+		log.Println("Failed to check token is revoked or not", dberr)
+		return true
+	}
+	return !exists
 }
