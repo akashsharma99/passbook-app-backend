@@ -38,7 +38,7 @@ create table
 create table
   passbook_app.tokens (
     id SERIAL primary key,
-    user_id uuid NOT NULL,
+    user_id uuid NOT NULL UNIQUE,
     rtoken TEXT NOT NULL,
     created_at timestamp with time zone not null,
     updated_at timestamp with time zone not null
