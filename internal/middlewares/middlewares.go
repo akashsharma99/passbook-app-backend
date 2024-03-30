@@ -6,14 +6,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/akashsharma99/passbook-app/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
-
-type UserTokenClaims struct {
-	UserID string `json:"userId"`
-	jwt.RegisteredClaims
-}
 
 // Auth User middleware to check if the user is authenticated
 func AuthUser() gin.HandlerFunc {
@@ -36,7 +32,7 @@ func AuthUser() gin.HandlerFunc {
 			return
 		}
 		jwtToken := authHeaderParts[1]
-		claims, err := ValidateToken(jwtToken)
+		claims, err := ValidateToken(jwtToken, os.Getenv("ACCESS_SECRET"))
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"status":  "error",
@@ -49,10 +45,10 @@ func AuthUser() gin.HandlerFunc {
 	}
 }
 
-func ValidateToken(jwtToken string) (*UserTokenClaims, error) {
-	claims := &UserTokenClaims{}
+func ValidateToken(jwtToken string, secret string) (*types.UserTokenClaims, error) {
+	claims := &types.UserTokenClaims{}
 	token, err := jwt.ParseWithClaims(jwtToken, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("ACCESS_SECRET")), nil
+		return []byte(secret), nil
 	}, jwt.WithExpirationRequired(), jwt.WithIssuedAt())
 	if err != nil {
 		log.Println(err)

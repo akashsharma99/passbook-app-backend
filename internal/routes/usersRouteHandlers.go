@@ -3,21 +3,12 @@ package routes
 import (
 	"context"
 	"log"
-	"time"
 
 	"github.com/akashsharma99/passbook-app/internal/initializers"
+	"github.com/akashsharma99/passbook-app/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 )
-
-type User struct {
-	UserID       string    `json:"user_id"`
-	Username     string    `json:"username"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"password_hash"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-}
 
 func GetUser(ctx *gin.Context) {
 	// take the user id from the auth middleware
@@ -25,7 +16,7 @@ func GetUser(ctx *gin.Context) {
 	// get the user from the DB
 	rows, _ := initializers.DB.Query(context.Background(), "SELECT * FROM passbook_app.users WHERE user_id=$1", userID)
 	// scan row into user struct
-	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[User])
+	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.User])
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			setErrorResponse(ctx, 404, "User not found")
