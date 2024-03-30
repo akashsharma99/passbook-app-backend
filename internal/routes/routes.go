@@ -22,13 +22,13 @@ func NewRouter() *gin.Engine {
 			//auth.GET("/refresh", RefreshToken)
 		}
 		// users routes
-		/*
-			users := v1.Group("/users")
-			{
-				// users.GET("/me", GetUser)
-				// users.PATCH("/me", UpdateUser)
-			}
-		*/
+
+		users := v1.Group("/users")
+		{
+			users.GET("/me", GetUser)
+			// users.PATCH("/me", UpdateUser)
+		}
+
 		/*
 			passbooks := v1.Group("/passbooks")
 			{
