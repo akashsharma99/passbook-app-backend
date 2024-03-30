@@ -65,15 +65,13 @@ func CreateUser(ctx *gin.Context) {
 	if err != nil {
 		log.Println(err)
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-			setErrorResponse(ctx, 400, "Username or Email already exists. Please provide a unique username and email.")
+			setErrorResponse(ctx, 409, "Username or Email already exists. Please provide a unique username and email.")
 			return
 		}
 		setErrorResponse(ctx, 500, "Failed to create User. Try again later!")
 		return
 	}
-	// get the generated userid
-	var user_id string
-	initializers.DB.QueryRow(context.Background(), "SELECT user_id FROM passbook_app.users WHERE username=$1", user.Username).Scan(&user_id)
+
 	ctx.JSON(201, gin.H{
 		"status":  "success",
 		"message": "User created successfully",

@@ -25,7 +25,6 @@ func NewRouter() *gin.Engine {
 			auth.GET("/refresh", RefreshToken)
 		}
 		// users routes
-
 		users := v1.Group("/users")
 		{
 			users.GET("/me", middlewares.AuthUser(), GetUser)
