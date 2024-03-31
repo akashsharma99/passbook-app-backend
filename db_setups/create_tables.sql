@@ -15,15 +15,17 @@ create table
     user_id uuid references passbook_app.users(user_id) not null,
     bank_name VARCHAR(255) NOT NULL,
     account_number VARCHAR(255) NOT NULL,
-    total_balance DECIMAL(10,2) NOT NULL,
+    total_balance DECIMAL(11,2) NOT NULL,
     nickname VARCHAR(255) NOT NULL,
-    constraint unique_bank_account unique (bank_name, account_number)
+    created_at timestamp with time zone not null,
+    updated_at timestamp with time zone not null,
+    constraint unique_bank_account unique (user_id, bank_name, account_number)
   );
 -- create transactions table
 create table
   passbook_app.transactions (
     transaction_id UUID primary key DEFAULT gen_random_uuid(),
-    amount DECIMAL(10,2) NOT NULL,
+    amount DECIMAL(11,2) NOT NULL,
     transaction_date timestamp with time zone not null,
     transaction_type VARCHAR(50) NOT NULL,
     party_name VARCHAR(255) not null,
