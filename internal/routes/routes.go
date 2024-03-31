@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// TODO: Refer to this guide for adding input validations https://blog.logrocket.com/gin-binding-in-go-a-tutorial-with-examples/
 // create a router using gin and return it
 func NewRouter() *gin.Engine {
 	router := gin.Default()
@@ -30,26 +31,24 @@ func NewRouter() *gin.Engine {
 			users.GET("/me", middlewares.AuthUser(), GetUser)
 			// users.PATCH("/me", UpdateUser)
 		}
+		// passbooks routes
+		passbooks := v1.Group("/passbooks")
+		{
+			passbooks.POST("", middlewares.AuthUser(), CreatePassbook) // creates a new passbook
+			// passbooks.GET("", middlewares.AuthUser(), GetPassbooks)                   // gets all passbooks for a user
+			// passbooks.GET("/:passbook_id", middlewares.AuthUser(), GetPassbook)       // gets a passbook by id
+			// passbooks.PATCH("/:passbook_id", middlewares.AuthUser(), UpdatePassbook)  // updates a passbook by id
+			// passbooks.DELETE("/:passbook_id", middlewares.AuthUser(), DeletePassbook) // deletes a passbook by id
 
-		/*
-			passbooks := v1.Group("/passbooks")
-			{
-				passbooks.POST("", CreatePassbook)                // creates a new passbook
-				passbooks.GET("", GetPassbooks)                   // gets all passbooks for a user
-				passbooks.GET("/:passbook_id", GetPassbook)       // gets a passbook by id
-				passbooks.PATCH("/:passbook_id", UpdatePassbook)  // updates a passbook by id
-				passbooks.DELETE("/:passbook_id", DeletePassbook) // deletes a passbook by id
-
-				transactions := passbooks.Group("/:passbook_id/transactions")
-				{
-					transactions.GET("", GetTransactions)                      // gets all transactions for a passbook
-					transactions.POST("", CreateTransaction)                   // creates a new transaction for a passbook
-					transactions.GET("/:transaction_id", GetTransaction)       // gets a transaction by id
-					transactions.PATCH("/:transaction_id", UpdateTransaction)  // updates a transaction by id
-					transactions.DELETE("/:transaction_id", DeleteTransaction) // deletes a transaction by id
-				}
-			}
-		*/
+			// transactions := passbooks.Group("/:passbook_id/transactions")
+			// {
+			// 	transactions.GET("", GetTransactions)                      // gets all transactions for a passbook
+			// 	transactions.POST("", CreateTransaction)                   // creates a new transaction for a passbook
+			// 	transactions.GET("/:transaction_id", GetTransaction)       // gets a transaction by id
+			// 	transactions.PATCH("/:transaction_id", UpdateTransaction)  // updates a transaction by id
+			// 	transactions.DELETE("/:transaction_id", DeleteTransaction) // deletes a transaction by id
+			// }
+		}
 	}
 
 	return router
