@@ -41,7 +41,7 @@ Authorization: Bearer <token>
     "meta": {}
 }
 ```
-## Endpoints
+## Auth Endpoints
 
 
 #### `POST /auth/register` - Register User
@@ -107,13 +107,38 @@ Authorization: Bearer <token>
   "iat": 1711814781 // issued at
 }
 ```
-> All 🔒 endpoints require a Authorization header
+
+#### `POST /auth/refresh` - Refresh access token
+
+Expected to be called when the access token is expired. The refresh should be present in the http-only cookie of the request headers.
+
+**Responses**
+- 400: Bad request (missing refresh token in cookie)
+- 401: Unauthorized (invalid refresh token)
+- 500: Internal failures
+- 200: Access token refreshed successfully
+```json
+{
+    "status": "success",
+    "message": "Token refreshed successfully",
+    "data": {
+        "access_token": "jwt_token"
+    }
+}
+```
+Also as part of token rotation strategy, the server will send a new refresh token in the http-only cookie.
+For more info on how refresh tokens work I would suggest reading [this](https://auth0.com/blog/refresh-tokens-what-are-they-and-when-to-use-them/) article by Auth0 team.
+
+## User Endpoints
+
+> All endpoints marked with the 🔒 symbol require you to pass the access_token as a Bearer token in Authorization header.
 
 #### `GET /users/me` 🔒 - Get User Profile
 ```bash
 curl -X GET http://api.domain.app/v1/users/me -H "Authorization : Bearer <token>"
 ```
 
+## Passbook Endpoints
 
 #### `POST /passbooks` 🔒 - Create Passbook
 
@@ -158,6 +183,9 @@ curl -X GET http://api.domain.app/v1/users/me -H "Authorization : Bearer <token>
 #### `GET /passbooks/:passbook_id` 🔒 - Get Passbook
 #### `DELETE /passbooks/:passbook_id` 🔒 - Delete Passbook
 #### `PATCH /passbooks/:passbook_id` 🔒 - Update Passbook
+
+## Transaction Endpoints
+
 #### `GET /passbooks/:passbook_id/transactions` 🔒 - Get All Transactions paginated
 - Query params
     - page: 1
