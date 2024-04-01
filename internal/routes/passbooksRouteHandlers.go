@@ -92,6 +92,9 @@ func sanitizePassbookRequest(pb *types.Passbook) error {
 	if (*pb).TotalBalance < 0 || (*pb).TotalBalance > 999999999.99 {
 		return errors.New("invalid total balance")
 	}
+	// truncate total balance to 2 decimal places if more than 2 decimal digits
+	(*pb).TotalBalance = float64(int((*pb).TotalBalance*100)) / 100
+
 	// nickname validations
 	(*pb).Nickname = trimAndSanitizeString((*pb).Nickname)
 	if (*pb).Nickname == "" || len((*pb).Nickname) > 255 {
