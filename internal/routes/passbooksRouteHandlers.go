@@ -26,6 +26,7 @@ func CreatePassbook(ctx *gin.Context) {
 	// input sanitization
 	err := sanitizePassbookRequest(&passbook)
 	if err != nil {
+		log.Println("Request sanitization and validation failed")
 		setErrorResponse(ctx, 400, err.Error())
 		return
 	}
@@ -107,4 +108,34 @@ func trimAndSanitizeString(s string) string {
 	s = strings.TrimSpace(s)
 	s = p.Sanitize(s)
 	return s
+}
+
+func GetPassbooks(ctx *gin.Context) {
+	loggedInUserID := ctx.MustGet("userId").(string)
+	log.Println("Getting Passbooks for user_id:", loggedInUserID)
+	rows, err := initializers.DB.Query(context.Background(), "SELECT passbook_id, bank_name, account_number, total_balance, nickname, created_at, updated_at FROM passbook_app.passbooks WHERE user_id=$1", loggedInUserID)
+	if err != nil {
+		log.Println("Failed to get passbooks for user_id:", loggedInUserID)
+		setErrorResponse(ctx, 500, "Failed to get passbooks")
+		return
+	}
+	defer rows.Close()
+	passbooks := make([]types.Passbook, 0)
+	for rows.Next() {
+		var p types.Passbook
+		err := rows.Scan(&p.PassbookID, &p.BankName, &p.AccountNumber, &p.TotalBalance, &p.Nickname, &p.CreatedAt, &p.UpdatedAt)
+		if err != nil {
+			log.Println("Failed to get passbooks for user_id:", loggedInUserID)
+			setErrorResponse(ctx, 500, "Failed to get passbooks")
+			return
+		}
+		passbooks = append(passbooks, p)
+	}
+	log.Println("Passbooks fetched for user_id:", loggedInUserID)
+	ctx.JSON(200, gin.H{
+		"status": "success",
+		"data": map[string][]types.Passbook{
+			"passbooks": passbooks,
+		},
+	})
 }

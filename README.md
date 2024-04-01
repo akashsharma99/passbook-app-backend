@@ -146,12 +146,31 @@ curl -X GET http://api.domain.app/v1/users/me -H "Authorization : Bearer <token>
 
 ```json
 {
-    "bank_name": "HDFC Bank",
-    "account_number": "1234567890"
+    "bank_name": "Bank of Zelda",
+    "account_number": "123512",
+    "total_balance": 1024.45,
+    "nickname": "salary"
 }
 ```
 **Responses**
 - 201: Passbook created successfully
+```json
+{
+    "data": {
+        "passbook": {
+            "passbook_id": "217c0dc1-cd9a-4562-825c-376b0da8a96e",
+            "user_id": "",
+            "bank_name": "Bank of Zelda",
+            "account_number": "123512",
+            "total_balance": 1024.45,
+            "nickname": "salary",
+            "created_at": "2024-04-02T00:22:09.134347+05:30",
+            "updated_at": "2024-04-02T00:22:09.134347+05:30"
+        }
+    },
+    "status": "success"
+}
+```
 - 400: Validation error
 
 #### `GET /passbooks` 🔒 - Get All Passbooks created by logged in user
@@ -160,24 +179,31 @@ curl -X GET http://api.domain.app/v1/users/me -H "Authorization : Bearer <token>
 - 200: Passbooks fetched successfully
 ```json
 {
-    "status": "success",
-    "code": 200,
-    "message": "Passbooks fetched successfully",
-    "data": [
-        {
-            "nickname": "My Savings",
-            "bank_name": "HDFC Bank",
-            "account_number": "123456789012345",
-            "total_balance": 1500.00
-        },
-        {
-            "nickname": "My Salary",
-            "bank_name": "ICICI Bank",
-            "account_number": "123456789012345",
-            "total_balance": 2000.00
-        }
-    ],
-    "meta": {}
+    "data": {
+        "passbooks": [
+            {
+                "passbook_id": "217c0dc1-cd9a-4562-825c-376b0da8a96e",
+                "user_id": "",
+                "bank_name": "Bank of Zelda",
+                "account_number": "123512",
+                "total_balance": 1024.45,
+                "nickname": "salary",
+                "created_at": "2024-04-02T00:22:09.134347+05:30",
+                "updated_at": "2024-04-02T00:22:09.134347+05:30"
+            },
+            {
+                "passbook_id": "2aaff5dd-61f3-4eab-8b26-b4ddbe68e5a5",
+                "user_id": "",
+                "bank_name": "Bowser Bank",
+                "account_number": "900000123512",
+                "total_balance": 1221024.45,
+                "nickname": "savings",
+                "created_at": "2024-04-02T00:22:09.134347+05:30",
+                "updated_at": "2024-04-02T00:22:09.134347+05:30"
+            }
+        ]
+    },
+    "status": "success"
 }
 ```
 #### `GET /passbooks/:passbook_id` 🔒 - Get Passbook
