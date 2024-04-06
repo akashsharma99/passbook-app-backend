@@ -139,3 +139,29 @@ func GetPassbooks(ctx *gin.Context) {
 		},
 	})
 }
+
+func GetPassbook(ctx *gin.Context) {
+	loggedInUserID := ctx.MustGet("userId").(string)
+	passbookID := ctx.Param("passbook_id")
+	log.Println("Getting Passbook for user_id:", loggedInUserID, "passbook_id:", passbookID)
+	row := initializers.DB.QueryRow(context.Background(), "SELECT passbook_id, bank_name, account_number, total_balance, nickname, created_at, updated_at FROM passbook_app.passbooks WHERE user_id=$1 AND passbook_id=$2", loggedInUserID, passbookID)
+	var p types.Passbook
+	err := row.Scan(&p.PassbookID, &p.BankName, &p.AccountNumber, &p.TotalBalance, &p.Nickname, &p.CreatedAt, &p.UpdatedAt)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			log.Println("Passbook not found for user_id:", loggedInUserID, "passbook_id:", passbookID)
+			setErrorResponse(ctx, 404, "Passbook not found")
+			return
+		}
+		log.Println("Failed to get passbook for user_id:", loggedInUserID, "passbook_id:", passbookID)
+		setErrorResponse(ctx, 500, "Failed to get passbook")
+		return
+	}
+	log.Println("Passbook fetched for user_id:", loggedInUserID, "passbook_id:", passbookID)
+	ctx.JSON(200, gin.H{
+		"status": "success",
+		"data": map[string]types.Passbook{
+			"passbook": p,
+		},
+	})
+}
