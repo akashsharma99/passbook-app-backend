@@ -165,3 +165,50 @@ func GetPassbook(ctx *gin.Context) {
 		},
 	})
 }
+func UpdatePassbook(ctx *gin.Context) {
+	loggedInUserID := ctx.MustGet("userId").(string)
+	passbookID := ctx.Param("passbook_id")
+	log.Println("Updating Passbook for user_id:", loggedInUserID, "passbook_id:", passbookID)
+	var passbook types.Passbook
+	if err := ctx.ShouldBindJSON(&passbook); err != nil {
+		setErrorResponse(ctx, 400, "Invalid request body")
+		return
+	}
+	// input sanitization
+	err := sanitizePassbookRequest(&passbook)
+	if err != nil {
+		log.Println("Request sanitization and validation failed")
+		setErrorResponse(ctx, 400, err.Error())
+		return
+	}
+	// check if the passbook exists for the user
+	var existingId string
+	err = initializers.DB.QueryRow(context.Background(), "SELECT passbook_id FROM passbook_app.passbooks WHERE user_id=$1 AND passbook_id=$2", loggedInUserID, passbookID).Scan(&existingId)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			log.Println("Passbook not found for user_id:", loggedInUserID, "passbook_id:", passbookID)
+			setErrorResponse(ctx, 404, "Passbook not found")
+			return
+		}
+		log.Println("Failed to check if passbook exists for user_id:", loggedInUserID)
+		setErrorResponse(ctx, 500, "Failed to update passbook")
+		return
+	}
+	// passbook exists, update the passbook
+	_, err2 := initializers.DB.Exec(context.Background(), "UPDATE passbook_app.passbooks SET bank_name=$1, account_number=$2, total_balance=$3, nickname=$4, updated_at=$5 WHERE user_id=$6 AND passbook_id=$7",
+		passbook.BankName, passbook.AccountNumber, passbook.TotalBalance, passbook.Nickname, time.Now().UTC(), loggedInUserID, passbookID)
+	if err2 != nil {
+		log.Println(err2)
+		log.Println("Failed to update passbook for user_id:", loggedInUserID, "passbook_id:", passbookID)
+		setErrorResponse(ctx, 500, "Failed to update passbook")
+		return
+	}
+	log.Println("Passbook updated for user_id:", loggedInUserID, "passbook_id:", passbookID)
+	// return the passbook details along with generated passbook_id
+	ctx.JSON(200, gin.H{
+		"status": "success",
+		"data": map[string]types.Passbook{
+			"passbook": passbook,
+		},
+	})
+}

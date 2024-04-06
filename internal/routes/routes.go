@@ -34,10 +34,10 @@ func NewRouter() *gin.Engine {
 		// passbooks routes
 		passbooks := v1.Group("/passbooks")
 		{
-			passbooks.POST("", middlewares.AuthUser(), CreatePassbook)          // creates a new passbook
-			passbooks.GET("", middlewares.AuthUser(), GetPassbooks)             // gets all passbooks for a user
-			passbooks.GET("/:passbook_id", middlewares.AuthUser(), GetPassbook) // gets a passbook by id
-			// passbooks.PATCH("/:passbook_id", middlewares.AuthUser(), UpdatePassbook)  // updates a passbook by id
+			passbooks.POST("", middlewares.AuthUser(), CreatePassbook)               // creates a new passbook
+			passbooks.GET("", middlewares.AuthUser(), GetPassbooks)                  // gets all passbooks for a user
+			passbooks.GET("/:passbook_id", middlewares.AuthUser(), GetPassbook)      // gets a passbook by id
+			passbooks.PATCH("/:passbook_id", middlewares.AuthUser(), UpdatePassbook) // updates a passbook by id
 			// passbooks.DELETE("/:passbook_id", middlewares.AuthUser(), DeletePassbook) // deletes a passbook by id
 
 			// transactions := passbooks.Group("/:passbook_id/transactions")
