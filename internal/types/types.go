@@ -41,3 +41,5 @@ type Transaction struct {
 	PassbookID      string    `json:"passbook_id"`
 	UserID          string    `json:"user_id"`
 }
+
+var ValidTransactionTypes = []string{"CREDIT", "DEBIT"}

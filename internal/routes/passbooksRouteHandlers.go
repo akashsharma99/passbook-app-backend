@@ -10,7 +10,6 @@ import (
 	"github.com/akashsharma99/passbook-app/internal/types"
 	"github.com/akashsharma99/passbook-app/internal/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -43,14 +42,14 @@ func CreatePassbook(ctx *gin.Context) {
 		return
 	}
 	// passbook does not exist, create a new passbook
-	uid, uiderr := uuid.NewRandom()
+	uid, uiderr := utils.GenerateUUID()
 	if uiderr != nil {
 		log.Println("Failed to generate passbook_id for user_id:", loggedInUserID)
 		setErrorResponse(ctx, 500, "Failed to create passbook")
 		return
 	}
 	pbook := types.Passbook{
-		PassbookID:    uid.String(),
+		PassbookID:    uid,
 		UserID:        loggedInUserID,
 		BankName:      passbook.BankName,
 		AccountNumber: passbook.AccountNumber,
@@ -89,7 +88,7 @@ func sanitizePassbookRequest(pb *types.Passbook) error {
 	if (*pb).AccountNumber == "" || len((*pb).AccountNumber) > 255 {
 		return errors.New("invalid account number")
 	}
-	// total balance should fit in DECIMAL(10,2)
+	// total balance should fit in DECIMAL(11,2)
 	if (*pb).TotalBalance < 0 || (*pb).TotalBalance > 999999999.99 {
 		return errors.New("invalid total balance")
 	}
