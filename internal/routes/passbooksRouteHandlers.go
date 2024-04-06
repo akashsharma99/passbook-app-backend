@@ -52,6 +52,7 @@ func CreatePassbook(ctx *gin.Context) {
 	}
 	pbook := types.Passbook{
 		PassbookID:    uid.String(),
+		UserID:        loggedInUserID,
 		BankName:      passbook.BankName,
 		AccountNumber: passbook.AccountNumber,
 		TotalBalance:  passbook.TotalBalance,
@@ -60,7 +61,7 @@ func CreatePassbook(ctx *gin.Context) {
 		UpdatedAt:     time.Now().UTC(),
 	}
 	_, err2 := initializers.DB.Exec(context.Background(), "INSERT INTO passbook_app.passbooks (passbook_id, user_id, bank_name, account_number, total_balance, nickname, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-		pbook.PassbookID, loggedInUserID, pbook.BankName, pbook.AccountNumber, pbook.TotalBalance, pbook.Nickname, pbook.CreatedAt, pbook.UpdatedAt)
+		pbook.PassbookID, pbook.UserID, pbook.BankName, pbook.AccountNumber, pbook.TotalBalance, pbook.Nickname, pbook.CreatedAt, pbook.UpdatedAt)
 	if err2 != nil {
 		log.Println(err2)
 		log.Println("Failed to create passbook for user_id:", loggedInUserID)
@@ -113,7 +114,7 @@ func trimAndSanitizeString(s string) string {
 func GetPassbooks(ctx *gin.Context) {
 	loggedInUserID := ctx.MustGet("userId").(string)
 	log.Println("Getting Passbooks for user_id:", loggedInUserID)
-	rows, err := initializers.DB.Query(context.Background(), "SELECT passbook_id, bank_name, account_number, total_balance, nickname, created_at, updated_at FROM passbook_app.passbooks WHERE user_id=$1", loggedInUserID)
+	rows, err := initializers.DB.Query(context.Background(), "SELECT passbook_id, user_id, bank_name, account_number, total_balance, nickname, created_at, updated_at FROM passbook_app.passbooks WHERE user_id=$1", loggedInUserID)
 	if err != nil {
 		log.Println("Failed to get passbooks for user_id:", loggedInUserID)
 		setErrorResponse(ctx, 500, "Failed to get passbooks")
@@ -123,7 +124,7 @@ func GetPassbooks(ctx *gin.Context) {
 	passbooks := make([]types.Passbook, 0)
 	for rows.Next() {
 		var p types.Passbook
-		err := rows.Scan(&p.PassbookID, &p.BankName, &p.AccountNumber, &p.TotalBalance, &p.Nickname, &p.CreatedAt, &p.UpdatedAt)
+		err := rows.Scan(&p.PassbookID, &p.UserID, &p.BankName, &p.AccountNumber, &p.TotalBalance, &p.Nickname, &p.CreatedAt, &p.UpdatedAt)
 		if err != nil {
 			log.Println("Failed to get passbooks for user_id:", loggedInUserID)
 			setErrorResponse(ctx, 500, "Failed to get passbooks")
@@ -144,9 +145,9 @@ func GetPassbook(ctx *gin.Context) {
 	loggedInUserID := ctx.MustGet("userId").(string)
 	passbookID := ctx.Param("passbook_id")
 	log.Println("Getting Passbook for user_id:", loggedInUserID, "passbook_id:", passbookID)
-	row := initializers.DB.QueryRow(context.Background(), "SELECT passbook_id, bank_name, account_number, total_balance, nickname, created_at, updated_at FROM passbook_app.passbooks WHERE user_id=$1 AND passbook_id=$2", loggedInUserID, passbookID)
+	row := initializers.DB.QueryRow(context.Background(), "SELECT passbook_id, user_id, bank_name, account_number, total_balance, nickname, created_at, updated_at FROM passbook_app.passbooks WHERE user_id=$1 AND passbook_id=$2", loggedInUserID, passbookID)
 	var p types.Passbook
-	err := row.Scan(&p.PassbookID, &p.BankName, &p.AccountNumber, &p.TotalBalance, &p.Nickname, &p.CreatedAt, &p.UpdatedAt)
+	err := row.Scan(&p.PassbookID, &p.UserID, &p.BankName, &p.AccountNumber, &p.TotalBalance, &p.Nickname, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			log.Println("Passbook not found for user_id:", loggedInUserID, "passbook_id:", passbookID)
@@ -172,6 +173,12 @@ func UpdatePassbook(ctx *gin.Context) {
 	var passbook types.Passbook
 	if err := ctx.ShouldBindJSON(&passbook); err != nil {
 		setErrorResponse(ctx, 400, "Invalid request body")
+		return
+	}
+	// if user tries to update some other users passbook return 400
+	if passbook.UserID != "" && passbook.UserID != loggedInUserID {
+		log.Println("User_id in request body does not match with the logged in user_id")
+		setErrorResponse(ctx, 400, "Passbook not owned by the logged in user")
 		return
 	}
 	// input sanitization
