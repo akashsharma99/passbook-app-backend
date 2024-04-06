@@ -180,6 +180,10 @@ func UpdatePassbook(ctx *gin.Context) {
 		log.Println("User_id in request body does not match with the logged in user_id")
 		setErrorResponse(ctx, 400, "Passbook not owned by the logged in user")
 		return
+	} else if passbook.UserID == "" {
+		log.Println("User_id not present in request body")
+		setErrorResponse(ctx, 400, "User_id not present in request body")
+		return
 	}
 	// input sanitization
 	err := sanitizePassbookRequest(&passbook)
@@ -201,9 +205,10 @@ func UpdatePassbook(ctx *gin.Context) {
 		setErrorResponse(ctx, 500, "Failed to update passbook")
 		return
 	}
+	passbook.UpdatedAt = time.Now().UTC()
 	// passbook exists, update the passbook
 	_, err2 := initializers.DB.Exec(context.Background(), "UPDATE passbook_app.passbooks SET bank_name=$1, account_number=$2, total_balance=$3, nickname=$4, updated_at=$5 WHERE user_id=$6 AND passbook_id=$7",
-		passbook.BankName, passbook.AccountNumber, passbook.TotalBalance, passbook.Nickname, time.Now().UTC(), loggedInUserID, passbookID)
+		passbook.BankName, passbook.AccountNumber, passbook.TotalBalance, passbook.Nickname, passbook.UpdatedAt, loggedInUserID, passbookID)
 	if err2 != nil {
 		log.Println(err2)
 		log.Println("Failed to update passbook for user_id:", loggedInUserID, "passbook_id:", passbookID)
