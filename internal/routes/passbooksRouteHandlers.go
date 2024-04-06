@@ -4,15 +4,14 @@ import (
 	"context"
 	"errors"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/akashsharma99/passbook-app/internal/initializers"
 	"github.com/akashsharma99/passbook-app/internal/types"
+	"github.com/akashsharma99/passbook-app/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/microcosm-cc/bluemonday"
 )
 
 func CreatePassbook(ctx *gin.Context) {
@@ -81,12 +80,12 @@ func CreatePassbook(ctx *gin.Context) {
 func sanitizePassbookRequest(pb *types.Passbook) error {
 
 	// bankname validations
-	(*pb).BankName = trimAndSanitizeString((*pb).BankName)
+	(*pb).BankName = utils.TrimAndSanitizeStrict((*pb).BankName)
 	if (*pb).BankName == "" || len((*pb).BankName) > 255 {
 		return errors.New("invalid bank name")
 	}
 	// account number validations
-	(*pb).AccountNumber = trimAndSanitizeString((*pb).AccountNumber)
+	(*pb).AccountNumber = utils.TrimAndSanitizeStrict((*pb).AccountNumber)
 	if (*pb).AccountNumber == "" || len((*pb).AccountNumber) > 255 {
 		return errors.New("invalid account number")
 	}
@@ -98,17 +97,11 @@ func sanitizePassbookRequest(pb *types.Passbook) error {
 	(*pb).TotalBalance = float64(int((*pb).TotalBalance*100)) / 100
 
 	// nickname validations
-	(*pb).Nickname = trimAndSanitizeString((*pb).Nickname)
+	(*pb).Nickname = utils.TrimAndSanitizeStrict((*pb).Nickname)
 	if (*pb).Nickname == "" || len((*pb).Nickname) > 255 {
 		return errors.New("invalid nickname")
 	}
 	return nil
-}
-func trimAndSanitizeString(s string) string {
-	p := bluemonday.StrictPolicy()
-	s = strings.TrimSpace(s)
-	s = p.Sanitize(s)
-	return s
 }
 
 func GetPassbooks(ctx *gin.Context) {
