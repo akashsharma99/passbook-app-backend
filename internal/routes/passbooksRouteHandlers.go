@@ -222,6 +222,7 @@ func UpdatePassbook(ctx *gin.Context) {
 		"data": map[string]types.Passbook{
 			"passbook": passbook,
 		},
+		"message": "Passbook updated successfully",
 	})
 }
 
@@ -241,6 +242,7 @@ func DeletePassbook(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(200, gin.H{
-		"status": "success",
+		"status":  "success",
+		"message": "Passbook deleted successfully",
 	})
 }

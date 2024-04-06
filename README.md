@@ -159,7 +159,7 @@ curl -X GET http://api.domain.app/v1/users/me -H "Authorization : Bearer <token>
     "data": {
         "passbook": {
             "passbook_id": "217c0dc1-cd9a-4562-825c-376b0da8a96e",
-            "user_id": "",
+            "user_id": "3aaff7dd-91f3-4eab-8b26-b4ddbe68e5a5",
             "bank_name": "Bank of Zelda",
             "account_number": "123512",
             "total_balance": 1024.45,
@@ -171,7 +171,8 @@ curl -X GET http://api.domain.app/v1/users/me -H "Authorization : Bearer <token>
     "status": "success"
 }
 ```
-- 400: Validation error
+- 400: Validation errors or account already exists
+- 500: Internal failures
 
 #### `GET /passbooks` 🔒 - Get All Passbooks created by logged in user
 
@@ -183,7 +184,7 @@ curl -X GET http://api.domain.app/v1/users/me -H "Authorization : Bearer <token>
         "passbooks": [
             {
                 "passbook_id": "217c0dc1-cd9a-4562-825c-376b0da8a96e",
-                "user_id": "",
+                "user_id": "3aaff7dd-91f3-4eab-8b26-b4ddbe68e5a5",
                 "bank_name": "Bank of Zelda",
                 "account_number": "123512",
                 "total_balance": 1024.45,
@@ -193,7 +194,7 @@ curl -X GET http://api.domain.app/v1/users/me -H "Authorization : Bearer <token>
             },
             {
                 "passbook_id": "2aaff5dd-61f3-4eab-8b26-b4ddbe68e5a5",
-                "user_id": "",
+                "user_id": "3aaff7dd-91f3-4eab-8b26-b4ddbe68e5a5",
                 "bank_name": "Bowser Bank",
                 "account_number": "900000123512",
                 "total_balance": 1221024.45,
@@ -207,8 +208,70 @@ curl -X GET http://api.domain.app/v1/users/me -H "Authorization : Bearer <token>
 }
 ```
 #### `GET /passbooks/:passbook_id` 🔒 - Get Passbook
+
+**Responses**
+- 200: Passbook fetched successfully
+```json
+{
+    "data": {
+        "passbook": {
+            "passbook_id": "217c0dc1-cd9a-4562-825c-376b0da8a96e",
+            "user_id": "3aaff7dd-91f3-4eab-8b26-b4ddbe68e5a5",
+            "bank_name": "Bank of Zelda",
+            "account_number": "123512",
+            "total_balance": 1024.45,
+            "nickname": "salary",
+            "created_at": "2024-04-02T00:22:09.134347+05:30",
+            "updated_at": "2024-04-02T00:22:09.134347+05:30"
+        }
+    },
+    "status": "success"
+}
+```
+- 404: Passbook not found
+- 500: Internal failures
+
 #### `DELETE /passbooks/:passbook_id` 🔒 - Delete Passbook
+**Responses**
+- 404: Passbook not found
+- 200: Passbook deleted successfully
+```json
+{
+    "status": "success",
+    "message": "Passbook deleted successfully"
+}
+```
 #### `PATCH /passbooks/:passbook_id` 🔒 - Update Passbook
+**Request**
+
+```json
+{
+    "passbook_id": "217c0dc1-cd9a-4562-825c-376b0da8a96e",
+    "user_id": "3aaff7dd-91f3-4eab-8b26-b4ddbe68e5a5",
+    "bank_name": "Bank of Zelda",
+    "account_number": "123512",
+    "total_balance": 2024.45,
+    "nickname": "salary old"
+}
+```
+**Responses**
+
+- 200: Passbook updated successfully
+```json
+{
+    "passbook_id": "217c0dc1-cd9a-4562-825c-376b0da8a96e",
+    "user_id": "3aaff7dd-91f3-4eab-8b26-b4ddbe68e5a5",
+    "bank_name": "Bank of Zelda",
+    "account_number": "123512",
+    "total_balance": 2024.45,
+    "nickname": "salary old",
+    "created_at": "2024-04-02T00:22:09.134347+05:30",
+    "updated_at": "2024-05-22T01:02:09.134347+05:30"
+}
+```
+- 404: Passbook not found
+- 403: Forbidden if user_id on reqeust body and token user_id do not match
+- 500: Internal failures
 
 ## Transaction Endpoints
 
