@@ -178,7 +178,7 @@ func UpdatePassbook(ctx *gin.Context) {
 	// if user tries to update some other users passbook return 400
 	if passbook.UserID != "" && passbook.UserID != loggedInUserID {
 		log.Println("User_id in request body does not match with the logged in user_id")
-		setErrorResponse(ctx, 400, "Passbook not owned by the logged in user")
+		setErrorResponse(ctx, 403, "Passbook not owned by the logged in user")
 		return
 	} else if passbook.UserID == "" {
 		log.Println("User_id not present in request body")
@@ -222,5 +222,25 @@ func UpdatePassbook(ctx *gin.Context) {
 		"data": map[string]types.Passbook{
 			"passbook": passbook,
 		},
+	})
+}
+
+func DeletePassbook(ctx *gin.Context) {
+	loggedInUserID := ctx.MustGet("userId").(string)
+	passbookID := ctx.Param("passbook_id")
+	log.Println("Reqeust to delete passbook with id : ", passbookID)
+	_, err := initializers.DB.Exec(context.Background(), "DELETE passbook_app.passbooks where user_id=$1 and passbook_id=$2", loggedInUserID, passbookID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			log.Println("Passbook not found for user_id:", loggedInUserID, "passbook_id:", passbookID)
+			setErrorResponse(ctx, 404, "Passbook not found")
+			return
+		}
+		log.Println("Failed to delete passbook for user_id:", loggedInUserID, "passbook_id:", passbookID)
+		setErrorResponse(ctx, 500, "Failed to delete passbook")
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"status": "success",
 	})
 }
