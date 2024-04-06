@@ -336,5 +336,4 @@ curl -X GET http://api.domain.app/v1/users/me -H "Authorization : Bearer <token>
 
 #### `GET /passbooks/:passbook_id/transactions/:transaction_id` 🔒 - Get Transaction
 #### `PATCH /passbooks/:passbook_id/transactions/:transaction_id` 🔒 - Update Transaction
-#### `DELETE /passbooks/:passbook_id/transactions/:transaction_id` 🔒 - Delete Transaction
 
