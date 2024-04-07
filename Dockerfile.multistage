@@ -14,8 +14,7 @@ RUN go mod download
 # Copy the source code into the container
 COPY . ./
 
-# Build the go gin app in release mode
-ENV GIN_MODE=release
+# Build the go gin app
 RUN CGO_ENABLED=0 GOOS=linux go build -o /passbook-app ./cmd/passbook-app/main.go
 
 # Start a new stage from alpine linux

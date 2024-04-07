@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"os"
+
 	"github.com/akashsharma99/passbook-app/internal/middlewares"
 	"github.com/gin-gonic/gin"
 )
@@ -8,6 +10,10 @@ import (
 // TODO: Refer to this guide for adding input validations https://blog.logrocket.com/gin-binding-in-go-a-tutorial-with-examples/
 // create a router using gin and return it
 func NewRouter() *gin.Engine {
+	// set the gin mode to release if PASSBOOK_ENV is not DEV
+	if env := os.Getenv("PASSBOOK_ENV"); env != "DEV" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	router := gin.Default()
 	// add routes for v1 of api
 	v1 := router.Group("/v1")
