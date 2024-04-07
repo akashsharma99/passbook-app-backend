@@ -12,21 +12,22 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy the source code into the container
-COPY . .
+COPY . ./
 
 # Build the go gin app in release mode
 ENV GIN_MODE=release
-RUN go build -o passbook-app /cmd/passbook-app/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /passbook-app ./cmd/passbook-app/main.go
 
 # Start a new stage from alpine linux
-FROM alpine:latest
+FROM alpine:latest AS release-stage
 
+WORKDIR /
 # Copy the pre-built binary from the previous stage
-COPY --from=build-stage /app/passbook-app .
+COPY --from=build-stage /passbook-app /passbook-app
 
 # Expose port 8080 to the outside world
 EXPOSE 8080
 
 # Command to run the executable
-CMD ["./passbook-app"]
+ENTRYPOINT ["/passbook-app"]
 
