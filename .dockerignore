@@ -1,0 +1,5 @@
+bin/
+.git/
+*.env
+makefile
+*.md
