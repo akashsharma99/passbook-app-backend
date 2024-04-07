@@ -2,11 +2,37 @@
 
 # Passbook App API
 
-Plan to create api using golang for the passbook app [frontend](https://github.com/akashsharma99/passbook-app-web)
+API using golang for the passbook app [frontend](https://github.com/akashsharma99/passbook-app-web)
 
 click [here](NOTES.md) for entity and functional requirement list.
 
 base URL: `http://api.domain.app/v1/`
+
+## Docker steps
+
+To run the app in docker container follow the steps below:
+
+1. Build the docker image using multistage dockerfile that will build the go binary and then copy it to a smaller image for running the app.
+```bash
+docker build -t passbook-app-backend -f Dockerfile.multistage . 
+```
+2. Run the image in a docker container and pass the .env file as an environment file.
+```bash
+docker run -p 8080:8080 -d --env-file dev.env passbook-app-backend
+```
+To view the logs of the running container use the command below:
+```bash
+docker logs -f <container_name>
+```
+## Local run without docker
+
+To run the app locally without docker you need to set PASSBOOK_ENV=DEV so that the code reads the dev.env file for environment variables.
+```bash
+PASSBOOK_ENV=DEV CGO_ENABLED=0 go run cmd/passbook-app/main.go
+```
+
+All above commands are also present in the makefile. You can run the commands using `make` command.
+
 
 ## Authentication
 
