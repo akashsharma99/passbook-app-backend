@@ -10,7 +10,9 @@ import (
 	"github.com/akashsharma99/passbook-app/internal/types"
 	"github.com/akashsharma99/passbook-app/internal/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5" // Added for pgx.ErrNoRows
+	// pgxpool import removed if no longer directly needed after changing updatePassbookAndCreateTrx signature
+	// database/sql import removed as sql.ErrNoRows is replaced by pgx.ErrNoRows
 )
 
 func CreateTransaction(ctx *gin.Context) {
@@ -81,7 +83,7 @@ Lock on the passbook before creating a transaction to update the total balance o
 Update the passbook's updated_at field and also disallow the transaction if the new balance is less than 0.
 Create the transaction and commit the transaction.
 */
-func updatePassbookAndCreateTrx(conn *pgxpool.Pool, tr *types.Transaction) error {
+func updatePassbookAndCreateTrx(conn initializers.PgxPoolIface, tr *types.Transaction) error {
 	tx, err := conn.Begin(context.Background())
 	if err != nil {
 		return err
@@ -120,6 +122,60 @@ func updatePassbookAndCreateTrx(conn *pgxpool.Pool, tr *types.Transaction) error
 		return err
 	}
 	return nil
+}
+
+func GetTransaction(ctx *gin.Context) {
+	loggedInUserID := ctx.MustGet("user_id").(string)
+	passbookID := ctx.Param("passbook_id")
+	transactionID := ctx.Param("transaction_id")
+
+	var transaction types.Transaction
+
+	query := `
+		SELECT 
+			transaction_id, amount, transaction_date, transaction_type, 
+			party_name, description, created_at, updated_at, tags, 
+			passbook_id, user_id 
+		FROM passbook_app.transactions 
+		WHERE transaction_id=$1 AND passbook_id=$2 AND user_id=$3
+	`
+
+	err := initializers.DB.QueryRow(
+		context.Background(),
+		query,
+		transactionID,
+		passbookID,
+		loggedInUserID,
+	).Scan(
+		&transaction.TransactionID,
+		&transaction.Amount,
+		&transaction.TransactionDate,
+		&transaction.TransactionType,
+		&transaction.PartyName,
+		&transaction.Description,
+		&transaction.CreatedAt,
+		&transaction.UpdatedAt,
+		&transaction.Tags,
+		&transaction.PassbookID,
+		&transaction.UserID,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) { // Changed to pgx.ErrNoRows
+			setErrorResponse(ctx, 404, "Transaction not found or not authorized")
+			return
+		}
+		log.Printf("Error fetching transaction %s for passbook %s: %v", transactionID, passbookID, err)
+		setErrorResponse(ctx, 500, "Failed to retrieve transaction")
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"status": "success",
+		"data": map[string]interface{}{
+			"transaction": transaction,
+		},
+	})
 }
 
 func sanitizeTransactionRequest(tr *types.Transaction) error {
