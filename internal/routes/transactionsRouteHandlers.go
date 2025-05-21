@@ -16,7 +16,7 @@ import (
 )
 
 func CreateTransaction(ctx *gin.Context) {
-	loggedInUserID := ctx.MustGet("user_id").(string)
+	loggedInUserID := ctx.MustGet("userId").(string)
 	passbookID := ctx.Param("passbook_id")
 	var transaction types.Transaction
 	if err := ctx.ShouldBindJSON(&transaction); err != nil {
@@ -68,7 +68,7 @@ func CreateTransaction(ctx *gin.Context) {
 		setErrorResponse(ctx, 500, "Failed to create transaction")
 		return
 	}
-	ctx.JSON(200, gin.H{
+	ctx.JSON(201, gin.H{
 		"status":  "success",
 		"message": "Transaction created successfully",
 		"data": map[string]interface{}{
@@ -125,7 +125,7 @@ func updatePassbookAndCreateTrx(conn initializers.PgxPoolIface, tr *types.Transa
 }
 
 func GetTransaction(ctx *gin.Context) {
-	loggedInUserID := ctx.MustGet("user_id").(string)
+	loggedInUserID := ctx.MustGet("userId").(string)
 	passbookID := ctx.Param("passbook_id")
 	transactionID := ctx.Param("transaction_id")
 

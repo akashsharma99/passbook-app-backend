@@ -49,8 +49,8 @@ func NewRouter() *gin.Engine {
 			transactions := passbooks.Group("/:passbook_id/transactions")
 			{
 				// 	transactions.GET("", GetTransactions)                      // gets all transactions for a passbook
-				transactions.POST("", CreateTransaction) // creates a new transaction for a passbook
-				transactions.GET("/:transaction_id", GetTransaction)       // gets a transaction by id
+				transactions.POST("", middlewares.AuthUser(), CreateTransaction)             // creates a new transaction for a passbook
+				transactions.GET("/:transaction_id", middlewares.AuthUser(), GetTransaction) // gets a transaction by id
 				// 	transactions.PATCH("/:transaction_id", UpdateTransaction)  // updates a transaction by id
 			}
 		}
