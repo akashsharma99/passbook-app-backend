@@ -14,7 +14,7 @@ import (
 	"github.com/akashsharma99/passbook-app/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"github.com/pashagolub/pgxmock/v2"
+	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -53,7 +53,7 @@ func TestGetTransaction(t *testing.T) {
 			c.Next()
 		}
 	}
-	
+
 	router := gin.New() // Use gin.New() instead of NewRouter() to isolate with test middleware
 	v1 := router.Group("/v1")
 	passbooks := v1.Group("/passbooks", authTestMiddleware()) // Apply middleware here
@@ -66,9 +66,8 @@ func TestGetTransaction(t *testing.T) {
 	// Use pgxmock.QueryMatcherRegexp for all mock expectations
 	mockDB.MatchExpectationsInOrder(false) // Allow out-of-order expectation matching if necessary for parallel tests later, though not strictly needed here.
 
-
 	t.Run("Successful fetch", func(t *testing.T) {
-		sampleTime := time.Now().UTC().Truncate(time.Microsecond) 
+		sampleTime := time.Now().UTC().Truncate(time.Microsecond)
 		expectedTransaction := types.Transaction{
 			TransactionID:   testTransactionID,
 			Amount:          100.50,
@@ -108,7 +107,7 @@ func TestGetTransaction(t *testing.T) {
 		w := httptest.NewRecorder()
 		reqURL := fmt.Sprintf("/v1/passbooks/%s/transactions/%s", testPassbookID, testTransactionID)
 		req, _ := http.NewRequest("GET", reqURL, nil)
-		
+
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -118,13 +117,13 @@ func TestGetTransaction(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, "success", responseBody["status"])
-		
+
 		data, ok := responseBody["data"].(map[string]interface{})
 		assert.True(t, ok, "data field is not a map")
 
 		transactionData, ok := data["transaction"].(map[string]interface{})
 		assert.True(t, ok, "transaction field is not a map")
-		
+
 		assert.Equal(t, expectedTransaction.TransactionID, transactionData["transaction_id"])
 		assert.Equal(t, expectedTransaction.Amount, transactionData["amount"])
 		assert.Equal(t, expectedTransaction.TransactionType, transactionData["transaction_type"])
@@ -132,7 +131,6 @@ func TestGetTransaction(t *testing.T) {
 		// Time needs special handling for comparison due to potential time zone/format issues in JSON
 		parsedTransactionDate, _ := time.Parse(time.RFC3339Nano, transactionData["transaction_date"].(string))
 		assert.True(t, expectedTransaction.TransactionDate.Equal(parsedTransactionDate))
-
 
 		assert.NoError(t, mockDB.ExpectationsWereMet(), "pgxmock expectations not met")
 	})
@@ -156,10 +154,10 @@ func TestGetTransaction(t *testing.T) {
 
 		assert.Equal(t, "error", responseBody["status"])
 		assert.Equal(t, "Transaction not found or not authorized", responseBody["message"])
-		
+
 		assert.NoError(t, mockDB.ExpectationsWereMet(), "pgxmock expectations not met")
 	})
-	
+
 	t.Run("Database error", func(t *testing.T) {
 		mockDB.ExpectQuery(expectedSQL).
 			WithArgs(testTransactionID, testPassbookID, testUserID).
