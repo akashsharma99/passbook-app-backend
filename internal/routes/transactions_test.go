@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
-	"strings"
 	"testing"
 	"time"
 
@@ -17,12 +15,6 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 )
-
-// normalizeSQL replaces all whitespace with a single space and trims for pgxmock
-func normalizeSQL(sql string) string {
-	s := strings.TrimSpace(sql)
-	return regexp.MustCompile(`\s+`).ReplaceAllString(s, " ")
-}
 
 func TestGetTransaction(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -49,7 +41,7 @@ func TestGetTransaction(t *testing.T) {
 	// Middleware to inject user_id into context for testing
 	authTestMiddleware := func() gin.HandlerFunc {
 		return func(c *gin.Context) {
-			c.Set("user_id", testUserID)
+			c.Set("userId", testUserID)
 			c.Next()
 		}
 	}
@@ -179,14 +171,5 @@ func TestGetTransaction(t *testing.T) {
 		assert.Equal(t, "Failed to retrieve transaction", responseBody["message"])
 
 		assert.NoError(t, mockDB.ExpectationsWereMet(), "pgxmock expectations not met")
-	})
-}
-
-// This function is defined in other route handler files,
-// but not exported, so we define a local version for testing.
-func testSetErrorResponse(ctx *gin.Context, code int, message string) { // Renamed
-	ctx.JSON(code, gin.H{
-		"status":  "error",
-		"message": message,
 	})
 }
