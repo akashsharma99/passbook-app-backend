@@ -348,12 +348,12 @@ curl -X GET http://api.domain.app/v1/users/me -H "Authorization : Bearer <token>
 
 ```json
 {
-    "amount": 1500.00,
+    "amount": 100.00,
     "transaction_date": "2023-12-31T14:48:00.000Z",
-    "type": "CREDIT",
+    "transaction_type": "CREDIT",
     "party_name": "Aditya Gupta",
     "description": "ice cream contribution",
-    "tags": "vacation,food,fun",
+    "tags": "vacation,food,fun"
 }
 ```
 **Responses**
